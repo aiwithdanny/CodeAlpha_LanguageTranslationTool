@@ -5,6 +5,7 @@ aur code import karne pe server khud-ba-khud start nahi hota.
 """
 
 import logging
+import os
 
 from flask import Flask, render_template
 
@@ -45,4 +46,5 @@ def create_app(config_class=Config) -> Flask:
 app = create_app()
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=app.config["DEBUG"])
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port, debug=app.config["DEBUG"])
