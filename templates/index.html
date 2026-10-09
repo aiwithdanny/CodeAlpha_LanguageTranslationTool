@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Language Translation Tool</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+<div class="card">
+  <h1>🌍 Language Translation Tool</h1>
+  <p class="subtitle">15 languages &bull; Free API &bull; No signup needed</p>
+
+  <div class="lang-row">
+    <select id="source" aria-label="Source language">
+      {% for code, name in languages.items() %}
+        <option value="{{ code }}" {% if code == "en-GB" %}selected{% endif %}>{{ name }}</option>
+      {% endfor %}
+    </select>
+    <button id="swap" title="Languages swap karein">⇄</button>
+    <select id="target" aria-label="Target language">
+      {% for code, name in languages.items() %}
+        <option value="{{ code }}" {% if code == "ur-PK" %}selected{% endif %}>{{ name }}</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <textarea id="input" placeholder="Yahan text likhein..." maxlength="{{ config['MAX_TEXT_LENGTH'] }}"></textarea>
+  <div class="counter" id="counter">0 / {{ config['MAX_TEXT_LENGTH'] }}</div>
+  <input type="hidden" id="maxLen" value="{{ config['MAX_TEXT_LENGTH'] }}">
+
+  <button id="go">Translate</button>
+
+  <div id="output" class="empty">Translated text yahan nazar aayega...</div>
+
+  <div class="actions">
+    <button id="copy">📋 Copy</button>
+    <button id="speak">🔊 Speak</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
