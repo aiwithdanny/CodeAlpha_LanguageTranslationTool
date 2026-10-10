@@ -14,6 +14,9 @@ class Config:
     # Konsa translation provider pehle try ho ("mymemory" ya "google")
     PRIMARY_PROVIDER = os.environ.get("TRANSLATION_PROVIDER", "mymemory")
 
+    # DeepL API key (free tier: 500k chars/month). Ho to DeepL primary ban jata hai.
+    DEEPL_API_KEY = os.environ.get("DEEPL_API_KEY", "")
+
     # Ek request me max kitne characters translate ho sakte hain
     MAX_TEXT_LENGTH = int(os.environ.get("MAX_TEXT_LENGTH", "5000"))
 

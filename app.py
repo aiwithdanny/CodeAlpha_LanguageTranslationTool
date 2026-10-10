@@ -27,7 +27,10 @@ def create_app(config_class=Config) -> Flask:
     app.translator = TranslationService(
         primary=app.config["PRIMARY_PROVIDER"],
         cache_size=app.config["CACHE_SIZE"],
+        deepl_api_key=app.config["DEEPL_API_KEY"],
     )
+    app.logger.info("Translation providers: %s",
+                    " -> ".join(app.translator.provider_names))
 
     app.register_blueprint(api_bp)
 

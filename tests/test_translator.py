@@ -83,3 +83,20 @@ def test_cache_avoids_repeat_calls():
     svc.translate("hello", "en-GB", "ur-PK")
     svc.translate("hello", "en-GB", "ur-PK")  # dobara same text
     assert primary.calls == 1  # sirf ek dafa API lagi
+
+
+def test_deepl_becomes_primary_when_key_given():
+    svc = TranslationService(deepl_api_key="fake-key")
+    assert svc.provider_names[0] == "deepl"
+
+
+def test_no_deepl_without_key():
+    svc = TranslationService()
+    assert "deepl" not in svc.provider_names
+
+
+def test_deepl_provider_needs_key():
+    from services.translator import DeepLProvider
+
+    with pytest.raises(ValueError):
+        DeepLProvider("")

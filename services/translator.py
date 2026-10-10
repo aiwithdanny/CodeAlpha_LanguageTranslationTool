@@ -79,6 +79,32 @@ class GoogleProvider(BaseTranslator):
             raise TranslationError(f"Google failed: {exc}") from exc
 
 
+class DeepLProvider(BaseTranslator):
+    """DeepL API (free tier: 500k chars/month). Key se chalta hai,
+    is liye datacenter IP block ka masla nahi hota."""
+
+    name = "deepl"
+
+    def __init__(self, api_key: str):
+        if not api_key:
+            raise ValueError("DeepL API key missing hai.")
+        self.api_key = api_key
+
+    def translate(self, text: str, source: str, target: str) -> str:
+        from deep_translator import DeeplTranslator
+
+        try:
+            return DeeplTranslator(
+                api_key=self.api_key,
+                source=source.split("-")[0],
+                target=target.split("-")[0],
+                use_free_api=True,
+            ).translate(text)
+        except Exception as exc:
+            logger.warning("DeepL provider failed: %s", exc)
+            raise TranslationError(f"DeepL failed: {exc}") from exc
+
+
 class TranslationService:
     """Public interface: validate -> cache check -> primary -> fallback."""
 
@@ -87,14 +113,21 @@ class TranslationService:
         primary: str = "mymemory",
         fallback: str = "google",
         cache_size: int = 256,
+        deepl_api_key: str = "",
     ):
         providers = {
             "mymemory": MyMemoryProvider(),
             "google": GoogleProvider(),
         }
+        if deepl_api_key:
+            providers["deepl"] = DeepLProvider(deepl_api_key)
+            # Key mojood hai to DeepL sab se reliable hai: usay primary banao
+            if primary == "mymemory":
+                primary, fallback = "deepl", "mymemory"
         if primary not in providers or fallback not in providers:
             raise ValueError(f"Unknown provider. Choose from {list(providers)}")
         self._ordered = [providers[primary], providers[fallback]]
+        self.provider_names = [p.name for p in self._ordered]
         # LRU cache: same text dobara aaye to API hit nahi hogi
         self._cached_translate = lru_cache(maxsize=cache_size)(self._translate_uncached)
 
