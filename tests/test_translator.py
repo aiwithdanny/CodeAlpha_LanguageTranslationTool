@@ -100,3 +100,44 @@ def test_deepl_provider_needs_key():
 
     with pytest.raises(ValueError):
         DeepLProvider("")
+
+
+def test_deepl_code_mapping():
+    from services.translator import DeepLProvider
+
+    m = DeepLProvider._to_deepl_code
+    assert m("en-GB") == "EN-GB"
+    assert m("ur-PK") == "UR"
+    assert m("pnb-PK") == "PA"
+    assert m("zh-CN") == "ZH"
+
+
+def test_deepl_translate_parses_response(monkeypatch):
+    from services.translator import DeepLProvider
+
+    class FakeResp:
+        status_code = 200
+
+        def json(self):
+            return {"translations": [{"text": "Hello duniya"}]}
+
+    monkeypatch.setattr(
+        "requests.post", lambda *a, **k: FakeResp()
+    )
+    p = DeepLProvider("fake-key")
+    assert p.translate("Hello world", "en-GB", "ur-PK") == "Hello duniya"
+
+
+def test_deepl_api_error_raises(monkeypatch):
+    from services.translator import DeepLProvider, TranslationError
+
+    class FakeResp:
+        status_code = 403
+        text = "forbidden"
+
+        def json(self):
+            return {}
+
+    monkeypatch.setattr("requests.post", lambda *a, **k: FakeResp())
+    with pytest.raises(TranslationError):
+        DeepLProvider("bad-key").translate("hi", "en-GB", "ur-PK")

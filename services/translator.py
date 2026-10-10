@@ -81,28 +81,60 @@ class GoogleProvider(BaseTranslator):
 
 class DeepLProvider(BaseTranslator):
     """DeepL API (free tier: 500k chars/month). Key se chalta hai,
-    is liye datacenter IP block ka masla nahi hota."""
+    is liye datacenter IP block ka masla nahi hota.
+
+    deep_translator ke bajaye seedha REST API call karte hain kyunke
+    uski DeepL language list purani hai (Urdu support nahi karti).
+    """
 
     name = "deepl"
+    BASE_URL = "https://api-free.deepl.com/v2/translate"
+
+    # Hamare codes -> DeepL codes (jo alag hain unka map)
+    CODE_OVERRIDES = {"pnb": "PA"}  # Pakistani Punjabi -> DeepL Punjabi
 
     def __init__(self, api_key: str):
         if not api_key:
             raise ValueError("DeepL API key missing hai.")
         self.api_key = api_key
 
+    @classmethod
+    def _to_deepl_code(cls, code: str) -> str:
+        short = code.split("-")[0].lower()
+        if short in cls.CODE_OVERRIDES:
+            return cls.CODE_OVERRIDES[short]
+        if code.lower() == "en-gb":
+            return "EN-GB"
+        if code.lower() == "en-us":
+            return "EN-US"
+        return short.upper()
+
     def translate(self, text: str, source: str, target: str) -> str:
-        from deep_translator import DeeplTranslator
+        import requests
 
         try:
-            return DeeplTranslator(
-                api_key=self.api_key,
-                source=source.split("-")[0],
-                target=target.split("-")[0],
-                use_free_api=True,
-            ).translate(text)
+            resp = requests.post(
+                self.BASE_URL,
+                headers={"Authorization": f"DeepL-Auth-Key {self.api_key}"},
+                data={
+                    "text": text,
+                    "source_lang": self._to_deepl_code(source),
+                    "target_lang": self._to_deepl_code(target),
+                },
+                timeout=25,
+            )
         except Exception as exc:
-            logger.warning("DeepL provider failed: %s", exc)
-            raise TranslationError(f"DeepL failed: {exc}") from exc
+            logger.warning("DeepL request failed: %s", exc)
+            raise TranslationError(f"DeepL request failed: {exc}") from exc
+
+        if resp.status_code != 200:
+            logger.warning("DeepL API error %s: %s",
+                           resp.status_code, resp.text[:200])
+            raise TranslationError(f"DeepL API error: {resp.status_code}")
+        try:
+            return resp.json()["translations"][0]["text"]
+        except (KeyError, IndexError, ValueError) as exc:
+            raise TranslationError(f"DeepL bad response: {exc}") from exc
 
 
 class TranslationService:
