@@ -99,14 +99,17 @@ class DeepLProvider(BaseTranslator):
         self.api_key = api_key
 
     @classmethod
-    def _to_deepl_code(cls, code: str) -> str:
+    def _to_deepl_code(cls, code: str, for_source: bool = False) -> str:
+        # DeepL source_lang me regional variant (EN-GB) nahi leta, sirf EN.
+        # Target me EN-GB / EN-US chalta hai.
         short = code.split("-")[0].lower()
         if short in cls.CODE_OVERRIDES:
             return cls.CODE_OVERRIDES[short]
-        if code.lower() == "en-gb":
-            return "EN-GB"
-        if code.lower() == "en-us":
-            return "EN-US"
+        if not for_source:
+            if code.lower() == "en-gb":
+                return "EN-GB"
+            if code.lower() == "en-us":
+                return "EN-US"
         return short.upper()
 
     def translate(self, text: str, source: str, target: str) -> str:
@@ -118,7 +121,7 @@ class DeepLProvider(BaseTranslator):
                 headers={"Authorization": f"DeepL-Auth-Key {self.api_key}"},
                 data={
                     "text": text,
-                    "source_lang": self._to_deepl_code(source),
+                    "source_lang": self._to_deepl_code(source, for_source=True),
                     "target_lang": self._to_deepl_code(target),
                 },
                 timeout=25,

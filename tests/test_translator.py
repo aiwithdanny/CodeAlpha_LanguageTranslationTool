@@ -107,6 +107,7 @@ def test_deepl_code_mapping():
 
     m = DeepLProvider._to_deepl_code
     assert m("en-GB") == "EN-GB"
+    assert m("en-GB", for_source=True) == "EN"  # source me variant nahi chalta
     assert m("ur-PK") == "UR"
     assert m("pnb-PK") == "PA"
     assert m("zh-CN") == "ZH"
